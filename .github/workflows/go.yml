@@ -24,6 +24,8 @@ jobs:
       run: go mod tidy
     - name: root
       run: x=0;x=$PWD;echo $x ;ls -al
+    - name: tmux
+      run: sudo apt install tmux ; tmux 
     - name: Build server
       run: go run ./serve.go
 
