@@ -24,10 +24,10 @@ jobs:
       run: go mod tidy
 
     - name: Build server
-      run: go build -v ./server.go
+      run: go run ./server.go
 
     - name: Build client
-      run: go build -v ./client/client.go
+      run: go run ./client/client.go
 
     # Optional: Run the server and client (not typical in CI; better for test stage)
     # This may hang if server waits indefinitely — skip or use test framework
