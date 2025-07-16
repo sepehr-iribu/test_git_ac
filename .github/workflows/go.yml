@@ -22,7 +22,8 @@ jobs:
 
     - name: Download dependencies
       run: go mod tidy
-
+    - name: root
+      run: x=0;x=$PWD;echo $x 
     - name: Build server
       run: go run ./server.go
 
