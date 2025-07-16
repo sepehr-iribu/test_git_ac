@@ -1,14 +1,11 @@
-# This workflow builds and optionally runs a Go project (server and client)
-# For more information: https://docs.github.com/en/actions
-
-name: Go
+name: Go Build and Test
 
 on:
   push:
     branches: [ "master" ]
 
 jobs:
-  build:
+  build_and_test: # Renamed job for clarity
     runs-on: ubuntu-latest
 
     steps:
@@ -22,19 +19,42 @@ jobs:
 
     - name: Download dependencies
       run: go mod tidy
-    - name: root
-      run: x=0;x=$PWD;echo $x ;ls -al
-    - name: tmux
-      run: sudo apt install tmux ; tmux 
-    - name: Build server
-      run: go run ./serve.go
 
-    - name: Build client
-      run: go run ./client/client.go
+    - name: Build server (and run in background)
+      run: |
+        # Build the server executable first
+        go build -o server_app ./serve.go
+        # Run the server in the background using '&'
+        ./server_app &
+        # Store the process ID to a file so we can stop it later if needed
+        echo $! > server.pid
 
-    # Optional: Run the server and client (not typical in CI; better for test stage)
-    # This may hang if server waits indefinitely — skip or use test framework
-    # - name: Run server
-    #   run: go run ./server.go &
-    # - name: Run client
-    #   run: go run ./client/client.go
+    - name: Wait for server to start
+      run: |
+        # Adjust port if your Go server runs on a different one
+        SERVER_PORT=8080 # Example port, replace with your server's actual port
+        echo "Waiting for server to be ready on port $SERVER_PORT..."
+        for i in $(seq 1 60); do # Try for up to 60 seconds (adjust as needed)
+          # Use netcat (nc) to check if the port is open
+          # '-z' scans for listening daemons, '-w 1' timeout after 1 second
+          nc -z localhost $SERVER_PORT && echo "Server is ready!" && break
+          echo "Server not ready yet, waiting... ($i/60)"
+          sleep 1
+          if [ $i -eq 60 ]; then
+            echo "Error: Server did not start in time."
+            exit 1 # Fail the step if server doesn't start
+          fi
+        done
+
+    - name: Build and Run client
+      run: |
+        # You can either build and run, or just run if it's a simple client
+        go run ./client/client.go
+
+    - name: Stop server (optional, but good practice)
+      if: always() # Ensures this step runs even if client fails
+      run: |
+        if [ -f server.pid ]; then
+          kill $(cat server.pid)
+          echo "Server stopped."
+        fi
