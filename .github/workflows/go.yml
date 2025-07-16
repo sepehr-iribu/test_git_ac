@@ -25,7 +25,7 @@ jobs:
     - name: root
       run: x=0;x=$PWD;echo $x ;ls -al
     - name: Build server
-      run: go run ./server.go
+      run: go run ./serve.go
 
     - name: Build client
       run: go run ./client/client.go
